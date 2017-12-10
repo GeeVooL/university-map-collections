@@ -12,7 +12,7 @@ namespace aisdi
 template <typename KeyType, typename ValueType>
 class TreeMap
 {
-public:
+ public:
   using key_type = KeyType;
   using mapped_type = ValueType;
   using value_type = std::pair<const key_type, mapped_type>;
@@ -24,7 +24,52 @@ public:
   class Iterator;
   using iterator = Iterator;
   using const_iterator = ConstIterator;
+ private:
+  // Non-value node
+  class Node {
+   public:
+    enum Color {
+      BLACK,
+      RED
+    };
 
+    Node* m_p;
+    Node* m_left;
+    Node* m_right;
+    Color m_color;
+
+    virtual ~Node() {}
+
+   protected:
+    Node() {}
+  };
+
+  // Value node
+  class ValueNode : public Node {
+   public:
+    value_type m_value;
+    ValueNode(const_reference value) : m_p(this), m_left(this), m_right(this), m_color(BLACK), value(value) {}
+    ValueNode(const key_type& first, const mapped_type& second) : m_p(this), m_left(this), m_right(this), m_color(BLACK), value(value_type(first, second)) {}
+  };
+
+  // NIL node
+  class NilNode : public Node {
+   public:
+    bool m_isEnd;
+    
+    NilNode(bool isEnd = false) : m_p(this), m_left(this), m_right(this), m_color(BLACK), m_isEnd(isEnd) {}
+    void setEnd(bool isEnd) {
+      m_isEnd = isEnd;
+    }
+  };
+
+  // Members
+  Node* m_root;
+  Node* m_nil;
+  Node* m_end;
+  size_type m_size;
+ 
+ public:
   TreeMap()
   {}
 
@@ -60,7 +105,7 @@ public:
 
   bool isEmpty() const
   {
-    throw std::runtime_error("TODO");
+    return !m_size;
   }
 
   mapped_type& operator[](const key_type& key)
