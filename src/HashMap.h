@@ -60,7 +60,7 @@ public:
 
   bool isEmpty() const
   {
-    throw std::runtime_error("TODO");
+    return true;
   }
 
   mapped_type& operator[](const key_type& key)
@@ -157,7 +157,7 @@ class HashMap<KeyType, ValueType>::ConstIterator
 {
 public:
   using reference = typename HashMap::const_reference;
-  using iterator_category = std::bidirectional_iterator_tag;
+  //using iterator_category = std::bidirectional_iterator_tag;
   using value_type = typename HashMap::value_type;
   using pointer = const typename HashMap::value_type*;
 
