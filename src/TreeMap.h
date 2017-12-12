@@ -43,7 +43,7 @@ namespace aisdi
             Node* m_right;
             Color m_color;
 
-            Node() : m_p(this), m_left(this), m_right(this), m_color(Color::BLACK) {}
+            Node() : m_p(nullptr), m_left(nullptr), m_right(nullptr), m_color(Color::BLACK) {}
             virtual ~Node() = default;
         };
 
@@ -53,21 +53,7 @@ namespace aisdi
         public:
             value_type m_value;
 
-            explicit ValueNode(const_reference value) {
-                this->m_p = this;
-                this->m_left = this;
-                this->m_right = this;
-                this->m_color = Node::Color::BLACK;
-                this->m_value = value;
-            }
-
-            ValueNode(const key_type &first, const mapped_type &second) {
-                this->m_p = this;
-                this->m_left = this;
-                this->m_right = this;
-                this->m_color = Node::Color::BLACK;
-                this->m_value = std::make_pair(first, second);
-            }
+            ValueNode(const key_type& key, const mapped_type& value) : Node(), m_value(key, value) {}
         };
 
     private:
@@ -175,7 +161,7 @@ namespace aisdi
             if (ptr == m_end || ptr == m_nil)
             {
                 ptr = new ValueNode(key, mapped_type{});
-                insert(ptr);
+                insert(static_cast<ValueNode*>(ptr));
             }
 
             return static_cast<ValueNode*>(ptr)->m_value.second;
@@ -195,14 +181,14 @@ namespace aisdi
 
         const_iterator find(const key_type &key) const
         {
-            (void) key;
-            throw std::runtime_error("TODO");
+            Node* x = search(key);
+            return const_iterator(*this, x);
         }
 
         iterator find(const key_type &key)
         {
-            (void) key;
-            throw std::runtime_error("TODO");
+            Node* x = search(key);
+            return iterator(*this, x);
         }
 
         void remove(const key_type &key)
@@ -235,22 +221,40 @@ namespace aisdi
 
         iterator begin()
         {
-            throw std::runtime_error("TODO");
+            Node* x = m_root;
+            if (x != m_end)
+            {            
+                while (x->m_left != m_nil)
+                    x = x->m_left;
+            }
+            return iterator(*this, x);
         }
 
         iterator end()
         {
-            throw std::runtime_error("TODO");
+            Node* x = m_root;
+            if (x != m_end)
+                x = m_root->m_p;
+            return iterator(*this, x);
         }
 
         const_iterator cbegin() const
         {
-            throw std::runtime_error("TODO");
+            Node* x = m_root;
+            if (x != m_end)
+            {            
+                while (x->m_left != m_nil)
+                    x = x->m_left;
+            }
+            return const_iterator(*this, x);
         }
 
         const_iterator cend() const
         {
-            throw std::runtime_error("TODO");
+            Node* x = m_root;
+            if (x != m_end)
+                x = m_root->m_p;
+            return iterator(*this, x);
         }
 
         const_iterator begin() const
