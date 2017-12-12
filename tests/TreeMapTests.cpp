@@ -408,53 +408,53 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(GivenEmptyMap_WhenSearchingForKey_ThenEndIsReturne
  BOOST_CHECK(it == end(map));
 }
 
-//BOOST_AUTO_TEST_CASE_TEMPLATE(GivenNonEmptyMap_WhenSearchingForMissingKey_ThenEndIsReturned,
-//                              K,
-//                              TestedKeyTypes)
-//{
-//  Map<K> map;
-//  map[321] = "Not it";
-//
-//  const auto it = map.find(123);
-//
-//  BOOST_CHECK(it == end(map));
-//}
-//
-//BOOST_AUTO_TEST_CASE_TEMPLATE(GivenNonEmptyMap_WhenSearchingForKey_ThenItemIsReturned,
-//                              K,
-//                              TestedKeyTypes)
-//{
-//  Map<K> map;
-//  map[321] = "Not it";
-//  map[123] = "It!";
-//
-//  const auto it = map.find(123);
-//
-//  BOOST_CHECK(it != end(map));
-//  BOOST_CHECK_EQUAL(it->first, 123);
-//  BOOST_CHECK_EQUAL(it->second, "It!");
-//}
-//
-//BOOST_AUTO_TEST_CASE_TEMPLATE(GivenEmptyMap_WhenGettingSize_ThenZeroIsReturnd,
-//                              K,
-//                              TestedKeyTypes)
-//{
-//  const Map<K> map;
-//
-//  BOOST_CHECK_EQUAL(map.getSize(), 0);
-//}
-//
-//BOOST_AUTO_TEST_CASE_TEMPLATE(GivenNonEmptyMap_WhenGettingSize_ThenItemCountIsReturnd,
-//                              K,
-//                              TestedKeyTypes)
-//{
-//  Map<K> map;
-//  map[1] = "1";
-//  map[2] = "1";
-//
-//  BOOST_CHECK_EQUAL(map.getSize(), 2);
-//}
-//
+BOOST_AUTO_TEST_CASE_TEMPLATE(GivenNonEmptyMap_WhenSearchingForMissingKey_ThenEndIsReturned,
+                             K,
+                             TestedKeyTypes)
+{
+ Map<K> map;
+ map[321] = "Not it";
+
+ const auto it = map.find(123);
+
+ BOOST_CHECK(it == end(map));
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(GivenNonEmptyMap_WhenSearchingForKey_ThenItemIsReturned,
+                             K,
+                             TestedKeyTypes)
+{
+ Map<K> map;
+ map[321] = "Not it";
+ map[123] = "It!";
+
+ const auto it = map.find(123);
+
+ BOOST_CHECK(it != end(map));
+ BOOST_CHECK_EQUAL(it->first, 123);
+ BOOST_CHECK_EQUAL(it->second, "It!");
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(GivenEmptyMap_WhenGettingSize_ThenZeroIsReturnd,
+                             K,
+                             TestedKeyTypes)
+{
+ const Map<K> map;
+
+ BOOST_CHECK_EQUAL(map.getSize(), 0);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(GivenNonEmptyMap_WhenGettingSize_ThenItemCountIsReturnd,
+                             K,
+                             TestedKeyTypes)
+{
+ Map<K> map;
+ map[1] = "1"; 
+ map[2] = "1";
+
+ BOOST_CHECK_EQUAL(map.getSize(), 2);
+}
+
 //BOOST_AUTO_TEST_CASE_TEMPLATE(GivenMap_WhenInitializingFromListOfPairs_ThenAllItemsAreInMap,
 //                              K,
 //                              TestedKeyTypes)

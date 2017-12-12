@@ -43,7 +43,7 @@ namespace aisdi
             Node* m_right;
             Color m_color;
 
-            Node() : m_p(nullptr), m_left(nullptr), m_right(nullptr), m_color(Color::BLACK) {}
+            Node() : m_p(this), m_left(this), m_right(this), m_color(Color::BLACK) {}
             virtual ~Node() = default;
         };
 
@@ -60,28 +60,27 @@ namespace aisdi
         // Members
         Node* m_root;
         Node* m_nil;
-        Node* m_end;
         size_type m_size;
 
     private:
         // Methods
-        Node* search(key_type key)
+        Node* search(key_type key) const
         {
             Node* ptr = m_root;
-            while (ptr != m_nil && ptr != m_end && static_cast<ValueNode*>(ptr)->m_value.first != key)
-            {
+            while (ptr != m_nil && static_cast<ValueNode*>(ptr)->m_value.first != key)
                 if (key < static_cast<ValueNode*>(ptr)->m_value.first)
                     ptr = ptr->m_left;
-            }
+                else
+                    ptr = ptr->m_right;
             return ptr;
         }
 
         void insert(ValueNode* z)
         {
-            Node* y = m_end;
+            Node* y = m_nil;
             Node* x = m_root;
 
-            while (x != m_end && x != m_nil)
+            while (x != m_nil)
             {
                 y = x;
                 if (z->m_value.first < static_cast<ValueNode*>(x)->m_value.first)
@@ -91,11 +90,11 @@ namespace aisdi
             }
             z->m_p = y;
 
-            if(y == m_end)
+            if (y == m_nil)
             {
                 m_root = z;
-                m_end->m_left = m_root;
-                m_end->m_right = m_root;
+                m_nil->m_left = m_root;
+                m_nil->m_right = m_root;
             }
             else if (z->m_value.first < static_cast<ValueNode*>(y)->m_value.first)
                 y->m_left = z;
@@ -115,8 +114,7 @@ namespace aisdi
     public:
         TreeMap() {
             m_nil = new Node();
-            m_end = new Node();
-            m_root = m_end;
+            m_root = m_nil;
             m_size = 0;
         }
 
@@ -158,7 +156,7 @@ namespace aisdi
         mapped_type& operator[](const key_type &key)
         {
             Node* ptr = search(key);
-            if (ptr == m_end || ptr == m_nil)
+            if (ptr == m_nil)
             {
                 ptr = new ValueNode(key, mapped_type{});
                 insert(static_cast<ValueNode*>(ptr));
@@ -221,40 +219,28 @@ namespace aisdi
 
         iterator begin()
         {
-            Node* x = m_root;
-            if (x != m_end)
-            {            
-                while (x->m_left != m_nil)
-                    x = x->m_left;
-            }
+            Node* x = m_root; 
+            while (x->m_left != m_nil)
+                x = x->m_left;
             return iterator(*this, x);
         }
 
         iterator end()
         {
-            Node* x = m_root;
-            if (x != m_end)
-                x = m_root->m_p;
-            return iterator(*this, x);
+            return iterator(*this, m_root->m_p);
         }
 
         const_iterator cbegin() const
         {
-            Node* x = m_root;
-            if (x != m_end)
-            {            
-                while (x->m_left != m_nil)
-                    x = x->m_left;
-            }
+            Node* x = m_root;         
+            while (x->m_left != m_nil)
+                x = x->m_left;
             return const_iterator(*this, x);
         }
 
         const_iterator cend() const
         {
-            Node* x = m_root;
-            if (x != m_end)
-                x = m_root->m_p;
-            return iterator(*this, x);
+            return const_iterator(*this, m_root->m_p);
         }
 
         const_iterator begin() const
@@ -289,7 +275,7 @@ namespace aisdi
 
         ConstIterator& operator++()
         {
-            if (m_ptr == m_source.m_end)
+            if (m_ptr == m_source.m_nil)
                 throw std::out_of_range("Next node does not exist.");
 
             if (m_ptr->m_right != m_source.m_nil)
@@ -304,7 +290,7 @@ namespace aisdi
             node_pointer tmp_y = m_ptr->m_p;
             node_pointer tmp_x = m_ptr;
 
-            while (tmp_y != m_source.m_end && tmp_x == tmp_y->m_right)
+            while (tmp_y != m_source.m_nil && tmp_x == tmp_y->m_right)
             {
                 tmp_x = tmp_y;
                 tmp_y = tmp_y->m_p;
@@ -323,9 +309,6 @@ namespace aisdi
 
         ConstIterator& operator--()
         {
-            if (m_source.m_root == m_source.m_end)
-                throw std::out_of_range("Previous node does not exist.");
-
             node_pointer min = m_source.m_root;
             while (min->m_left != m_source.m_nil)
                 min = min->m_left;
@@ -345,7 +328,7 @@ namespace aisdi
             node_pointer tmp_y = m_ptr->m_p;
             node_pointer tmp_x = m_ptr;
 
-            while (tmp_y != m_source.m_end && tmp_x == tmp_y->m_left)
+            while (tmp_y != m_source.m_nil && tmp_x == tmp_y->m_left)
             {
                 tmp_x = tmp_y;
                 tmp_y = tmp_y->m_p;
@@ -364,7 +347,7 @@ namespace aisdi
 
         reference operator*() const
         {
-            if (m_ptr == m_source.m_end || m_ptr == m_source.m_nil)
+            if (m_ptr == m_source.m_nil)
                 throw std::out_of_range("Iterator out of range.");
 
             return static_cast<valuenode_pointer>(m_ptr)->m_value;
