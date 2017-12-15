@@ -64,6 +64,110 @@ namespace aisdi
 
     private:
         // Methods
+
+        void leftRotate(Node* x)
+        {
+            Node* y = x->m_right;
+            x->m_right = y->m_left;
+
+            if (y->m_left != m_nil)
+                y->m_left->m_p = x;
+
+            y->m_p = x->m_p;
+
+            if (x->m_p == m_nil)
+            {
+                m_root = y;
+                m_nil->m_left = m_root;
+                m_nil->m_right = m_root;
+            }
+            else if (x == x->m_p->m_left)
+                x->m_p->m_left = y;
+            else
+                x->m_p->m_right = y;
+            y->m_left = x;
+            x->m_p = y;
+        }
+
+        void rightRotate(Node* x)
+        {
+            Node* y = x->m_left;
+            x->m_left = y->m_right;
+
+            if (y->m_right != m_nil)
+                y->m_right->m_p = x;
+
+            y->m_p = x->m_p;
+
+            if (x->m_p == m_nil)
+            {
+                m_root = y;
+                m_nil->m_left = m_root;
+                m_nil->m_right = m_root;
+            }
+            else if (x == x->m_p->m_right)
+                x->m_p->m_right = y;
+            else
+                x->m_p->m_left = y;
+            y->m_right = x;
+            x->m_p = y;
+        }
+
+        void insertFixup(Node* z) 
+        {
+            Node* y;
+
+            while (z->m_p->m_color)
+            {
+                if (z->m_p == z->m_p->m_p->m_left)
+                {
+                    y = z->m_p->m_p->m_right;
+                    if (y->m_color)
+                    {
+                        z->m_p->m_color = Node::Color::BLACK;
+                        y->m_color = Node::Color::BLACK;
+                        z->m_p->m_p->m_color = Node::Color::RED;
+                        z = z->m_p->m_p;
+                    }
+                    else
+                    {
+                        if (z == z->m_p->m_right)
+                        {
+                            z = z->m_p;
+                            leftRotate(z);
+                        }
+                        z->m_p->m_color = Node::Color::BLACK;
+                        z->m_p->m_p->m_color = Node::Color::RED;
+                        rightRotate(z->m_p->m_p);
+                    }
+                }
+                else
+                {
+                    y = z->m_p->m_p->m_left;
+                    if (y->m_color)
+                    {
+                        z->m_p->m_color = Node::Color::BLACK;
+                        y->m_color = Node::Color::BLACK;
+                        z->m_p->m_p->m_color = Node::Color::RED;
+                        z = z->m_p->m_p;
+                    }
+                    else
+                    {
+                        if (z == z->m_p->m_left)
+                        {
+                            z = z->m_p;
+                            rightRotate(z);
+                        }
+                        z->m_p->m_color = Node::Color::BLACK;
+                        z->m_p->m_p->m_color = Node::Color::RED;
+                        leftRotate(z->m_p->m_p);
+                    }
+                }
+            }
+
+            m_root->m_color = Node::Color::BLACK;
+        }
+
         Node* search(key_type key) const
         {
             Node* ptr = m_root;
@@ -106,10 +210,149 @@ namespace aisdi
             z->m_color = Node::Color::RED;
 
             m_size++;
-            // insertFixup(z);
+            insertFixup(z);
         }
 
+        void transplant(Node* u, Node* v)
+        {
+            if (u->m_p == m_nil)
+            {
+                m_root = v;
+                m_nil->m_left = m_root;
+                m_nil->m_right = m_root;
+            }
+            else if (u == u->m_p->m_left)
+                u->m_p->m_left = v;
+            else
+                u->m_p->m_right = v;
+            v->m_p = u->m_p;
+        }
 
+        void deleteFixup(Node* x)
+        {
+            Node* w;
+            while (x != m_root && x->m_color == Node::Color::BLACK)
+            {
+                if (x == x->m_p->m_left)
+                {
+                    w = x->m_p->m_right;
+                    if (w->m_color)
+                    {
+                        w->m_color = Node::Color::BLACK;
+                        x->m_p->m_color = Node::Color::RED;
+                        leftRotate(x->m_p);
+                        w = x->m_p->m_right;
+                    }
+                    if (w->m_left->m_color == Node::Color::BLACK && w->m_right->m_color == Node::Color::BLACK)
+                    {
+                        w->m_color = Node::Color::RED;
+                        x = x->m_p;
+                    }
+                    else
+                    {
+                        if (w->m_right->m_color == Node::Color::BLACK)
+                        {
+                            w->m_left->m_color = Node::Color::BLACK;
+                            w->m_color = Node::Color::RED;
+                            rightRotate(w);
+                            w = x->m_p->m_right;
+                        }
+                        w->m_color = x->m_p->m_color;
+                        x->m_p->m_color = Node::Color::BLACK;
+                        w->m_right->m_color = Node::Color::BLACK;
+                        leftRotate(x->m_p);
+                        x = m_root;
+                    }
+                }
+                else
+                {
+                    w = x->m_p->m_left;
+                    if (w->m_color)
+                    {
+                        w->m_color = Node::Color::BLACK;
+                        x->m_p->m_color = Node::Color::RED;
+                        rightRotate(x->m_p);
+                        w = x->m_p->m_left;
+                    }
+                    if (w->m_right->m_color == Node::Color::BLACK && w->m_left->m_color == Node::Color::BLACK)
+                    {
+                        w->m_color = Node::Color::RED;
+                        x = x->m_p;
+                    }
+                    else
+                    {
+                        if (w->m_left->m_color == Node::Color::BLACK)
+                        {
+                            w->m_right->m_color = Node::Color::BLACK;
+                            w->m_color = Node::Color::RED;
+                            leftRotate(w);
+                            w = x->m_p->m_left;
+                        }
+                        w->m_color = x->m_p->m_color;
+                        x->m_p->m_color = Node::Color::BLACK;
+                        w->m_left->m_color = Node::Color::BLACK;
+                        rightRotate(x->m_p);
+                        x = m_root;
+                    }
+                }
+            }
+
+            x->m_color = Node::Color::BLACK;
+        }
+
+        void remove(Node* z) 
+        {
+            Node* org = z;
+            Node* x;
+            Node* y = z;
+            auto yOriginalColor = y->m_color;
+
+            if (z->m_left == m_nil)
+            {
+                x = z->m_right;
+                transplant(z, z->m_right);
+            }
+            else if (z->m_right == m_nil)
+            {
+                x = z->m_left;
+                transplant(z, z->m_left);
+            }
+            else
+            {
+                y = z->m_right;
+
+                while (y->m_left != m_nil)
+                    y = y->m_left;
+
+                yOriginalColor = y->m_color;
+                x = y->m_right;
+
+                if(y->m_p == z)
+                    x->m_p = y;
+                else
+                {
+                    transplant(y, y->m_right);
+                    y->m_right = z->m_right;
+                    y->m_right->m_p = y;
+                }
+
+                transplant(z, y);
+                y->m_left = z->m_left;
+                y->m_left->m_p = y;
+                y->m_color = z->m_color;
+            }
+
+            m_size--;
+            if(yOriginalColor == Node::Color::BLACK)
+                deleteFixup(x);
+            delete org;
+        }
+
+        void clear()
+        {
+            while (m_root != m_nil)
+                remove(m_root);
+        }
 
     public:
         TreeMap() {
@@ -118,34 +361,69 @@ namespace aisdi
             m_size = 0;
         }
 
-        TreeMap(std::initializer_list<value_type> list)
-        {
-            (void) list; // disables "unused argument" warning, can be removed when method is implemented.
-            throw std::runtime_error("TODO");
+        ~TreeMap() {
+            clear();
+            delete m_nil;
         }
 
-        TreeMap(const TreeMap &other)
+        TreeMap(std::initializer_list<value_type> list) : TreeMap()
         {
-            (void) other;
-            throw std::runtime_error("TODO");
+            for (const value_type& val : list)
+            {
+                ValueNode* x = new ValueNode(val.first, val.second);
+                insert(x);
+            }
         }
 
-        TreeMap(TreeMap &&other)
+        TreeMap(const TreeMap &other) : TreeMap()
         {
-            (void) other;
-            throw std::runtime_error("TODO");
+            for (auto i = other.begin(); i != other.end(); ++i)
+            {
+                ValueNode *x = new ValueNode(i->first, i->second);
+                insert(x);
+            }
         }
 
-        TreeMap &operator=(const TreeMap &other)
+        TreeMap(TreeMap &&other) : m_root(nullptr), m_nil(nullptr),  m_size(0)
         {
-            (void) other;
-            throw std::runtime_error("TODO");
+            *this = std::move(other);
         }
 
-        TreeMap &operator=(TreeMap &&other)
+        TreeMap& operator=(const TreeMap &other)
         {
-            (void) other;
-            throw std::runtime_error("TODO");
+            if (this != &other)
+            {
+                clear();
+                for (auto i = other.begin(); i != other.end(); ++i)
+                {
+                    ValueNode *x = new ValueNode(i->first, i->second);
+                    insert(x);
+                }
+            }
+
+            return *this;
+        }
+
+        TreeMap& operator=(TreeMap &&other)
+        {
+            if (this != &other)
+            {
+                if (m_nil)
+                {
+                    clear();
+                    delete m_nil;
+                }    
+            
+                m_root = other.m_root;
+                m_nil = other.m_nil;
+                m_size = other.m_size;
+
+                other.m_root = nullptr;
+                other.m_nil = nullptr;
+                other.m_size = 0;
+            }
+
+            return *this;
         }
 
         bool isEmpty() const
@@ -165,16 +443,22 @@ namespace aisdi
             return static_cast<ValueNode*>(ptr)->m_value.second;
         }
 
-        const mapped_type &valueOf(const key_type &key) const
+        const mapped_type& valueOf(const key_type &key) const
         {
-            (void) key;
-            throw std::runtime_error("TODO");
+            Node* x = search(key);
+            if (x == m_nil)
+                throw std::out_of_range("Node with given key does not exist.");
+            
+            return static_cast<ValueNode*>(x)->m_value.second;
         }
 
-        mapped_type &valueOf(const key_type &key)
+        mapped_type& valueOf(const key_type &key)
         {
-            (void) key;
-            throw std::runtime_error("TODO");
+            Node* x = search(key);
+            if (x == m_nil)
+                throw std::out_of_range("Node with given key does not exist.");
+            
+            return static_cast<ValueNode*>(x)->m_value.second;
         }
 
         const_iterator find(const key_type &key) const
@@ -191,14 +475,18 @@ namespace aisdi
 
         void remove(const key_type &key)
         {
-            (void) key;
-            throw std::runtime_error("TODO");
+            Node* x = search(key);
+            if (x == m_nil)
+                throw std::out_of_range("Node with given key does not exist.");
+            remove(x);
         }
 
         void remove(const const_iterator &it)
         {
-            (void) it;
-            throw std::runtime_error("TODO");
+            Node* x = search(it->first);
+            if (x == m_nil)
+                throw std::out_of_range("Node with given key does not exist.");
+            remove(x);
         }
 
         size_type getSize() const
@@ -208,8 +496,22 @@ namespace aisdi
 
         bool operator==(const TreeMap &other) const
         {
-            (void) other;
-            throw std::runtime_error("TODO");
+            if (this->getSize() != other.getSize())
+                return false;
+
+            const_iterator org = this->cbegin();
+            const_iterator oth = other.cbegin();
+
+            for (size_type i = 0; i < getSize(); i++)
+            {
+                if (org->first != oth->first || org->second != oth->second)
+                    return false;
+                
+                ++org;
+                ++oth;
+            }
+
+            return true;
         }
 
         bool operator!=(const TreeMap &other) const
