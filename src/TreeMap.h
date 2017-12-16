@@ -454,7 +454,11 @@ namespace aisdi
 
         mapped_type& valueOf(const key_type &key)
         {
-            return const_cast<TreeMap&>(*this).valueOf(key);
+            Node* x = search(key);
+            if (x == m_nil)
+                throw std::out_of_range("Node with given key does not exist.");
+            
+            return static_cast<ValueNode*>(x)->m_value.second;
         }
 
         const_iterator find(const key_type &key) const
@@ -465,7 +469,8 @@ namespace aisdi
 
         iterator find(const key_type &key)
         {
-            return const_cast<TreeMap&>(*this).find(key);
+            Node* x = search(key);
+            return iterator(*this, x);
         }
 
         void remove(const key_type &key)
