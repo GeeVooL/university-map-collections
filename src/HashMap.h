@@ -2,11 +2,13 @@
 #define AISDI_MAPS_HASHMAP_H
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <functional>
 #include <initializer_list>
 #include <list>
 #include <stdexcept>
+#include <string>
 #include <utility>
 
 #define HASHMAP_SIZE 2048
@@ -22,8 +24,6 @@ class HashMap {
   using size_type = std::size_t;
   using reference = value_type&;
   using const_reference = const value_type&;
-  using list_iterator = typename std::list<key_type>::iterator;
-  using hash_type = typename std::hash<key_type>;
 
   class ConstIterator;
   class Iterator;
@@ -31,43 +31,50 @@ class HashMap {
   using const_iterator = ConstIterator;
 
  private:
-  std::list<value_type> m_data[HASHMAP_SIZE];
+  std::array<std::list<value_type>, HASHMAP_SIZE> m_data;
   size_type m_size = 0;
-  hash_type hash_fn;
+  std::hash<key_type> hash_fn;
+
  public:
   HashMap() {}
 
-  HashMap(std::initializer_list<value_type> list) {
-    for (const value_type& val : list)
-    {
-      const size_type index = hash_fn(val->first) % HASHMAP_SIZE;
-      m_data[index].emplace_back(val->first, val->second);
+  HashMap(std::initializer_list<value_type> list) : m_size(list.size()) {
+    for (const value_type& val : list) {
+      const size_type index = hash_fn(val.first) % HASHMAP_SIZE;
+      m_data[index].emplace_back(val.first, val.second);
     }
   }
 
   HashMap(const HashMap& other) {
-    m_data = other.m_data;
+    for (auto i = 0; i < HASHMAP_SIZE; i++) {
+      if (!other.m_data[i].empty())
+        for (auto elem : other.m_data[i])
+          m_data[i].emplace_back(elem.first, elem.second);
+    }
     m_size = other.m_size;
   }
 
-  HashMap(HashMap&& other) {
-    *this = std::move(other);
-  }
+  HashMap(HashMap&& other) { *this = std::move(other); }
 
   HashMap& operator=(const HashMap& other) {
-    if(this != &other) {
-      // Potential leak
-      m_data = other.m_data;
+    if (this != &other) {
+      for (auto i = 0; i < HASHMAP_SIZE; i++) {
+        m_data[i].clear();
+        if (!other.m_data[i].empty())
+          for (auto elem : other.m_data[i])
+            m_data[i].emplace_back(elem.first, elem.second);
+      }
       m_size = other.m_size;
     }
     return *this;
   }
 
   HashMap& operator=(HashMap&& other) {
-    if(this != &other) {
-      // Potential leak
+    if (this != &other) {
       m_data = std::move(other.m_data);
       m_size = std::move(other.m_size);
+
+      other.m_size = 0;
     }
     return *this;
   }
@@ -75,60 +82,67 @@ class HashMap {
   bool isEmpty() const { return !m_size; }
 
   mapped_type& operator[](const key_type& key) {
-    const size_type index = hash_fn(key)  % HASHMAP_SIZE;
+    const size_type index = hash_fn(key) % HASHMAP_SIZE;
 
-    for (list_iterator it : m_data[index]) {
-      if (it->first == key)
-        return it->second;
+    for (auto it = m_data[index].begin(); it != m_data[index].end(); it++) {
+      if ((*it).first == key)
+        return (*it).second;
     }
 
     m_data[index].emplace_back(key, mapped_type{});
     ++m_size;
-    return m_data[index].back()->second;
+    return m_data[index].back().second;
   }
 
   const mapped_type& valueOf(const key_type& key) const {
-    const size_type index = hash_fn(key)  % HASHMAP_SIZE;
-    
-    for (list_iterator it : m_data[index]) {
-      if (it->first == key)
-        return it->second;
+    const size_type index = hash_fn(key) % HASHMAP_SIZE;
+
+    for (auto it = m_data[index].begin(); it != m_data[index].end(); it++) {
+      if ((*it).first == key)
+        return (*it).second;
     }
 
     throw std::out_of_range("Element with given key does not exist");
   }
 
   mapped_type& valueOf(const key_type& key) {
-    return const_cast<HashMap&>(*this).valueOf(key);
+    // return const_cast<HashMap&>(*this).valueOf(key);
+    const size_type index = hash_fn(key) % HASHMAP_SIZE;
+
+    for (auto it = m_data[index].begin(); it != m_data[index].end(); it++) {
+      if ((*it).first == key)
+        return (*it).second;
+    }
+
+    throw std::out_of_range("Element with given key does not exist");
   }
 
   const_iterator find(const key_type& key) const {
-    const size_type index = hash_fn(key)  % HASHMAP_SIZE;
-    
-    for (list_iterator it : m_data[index]) {
-      if (it->first == key)
-        return const_iterator(); // TODO: here
-    }
+    const size_type index = hash_fn(key) % HASHMAP_SIZE;
 
+    for (auto it = m_data[index].begin(); it != m_data[index].end(); it++) {
+      if ((*it).first == key)
+        return const_iterator(*this, index, it);
+    }
     return cend();
   }
 
   iterator find(const key_type& key) {
-    const size_type index = hash_fn(key)  % HASHMAP_SIZE;
+    const size_type index = hash_fn(key) % HASHMAP_SIZE;
 
-    for (list_iterator it : m_data[index]) {
-      if (it->first == key)
-        return iterator(); // TODO: here
+    for (auto it = m_data[index].begin(); it != m_data[index].end(); it++) {
+      if ((*it).first == key)
+        return iterator(*this, index, it);
     }
 
     return end();
   }
 
   void remove(const key_type& key) {
-    const size_type index = hash_fn(key)  % HASHMAP_SIZE;
+    const size_type index = hash_fn(key) % HASHMAP_SIZE;
 
-    for (list_iterator it : m_data[index]) {
-      if (it->first == key) {
+    for (auto it = m_data[index].begin(); it != m_data[index].end(); it++) {
+      if ((*it).first == key) {
         m_data[index].erase(it);
         --m_size;
         return;
@@ -139,11 +153,11 @@ class HashMap {
   }
 
   void remove(const const_iterator& it) {
-    const size_type index = hash_fn(it->first)  % HASHMAP_SIZE;
+    const size_type index = hash_fn(it->first) % HASHMAP_SIZE;
 
-    for (list_iterator elem : m_data[index]) {
-      if (elem->first == it->first) {
-        m_data[index].erase(elem);
+    for (auto it_ = m_data[index].begin(); it_ != m_data[index].end(); it_++) {
+      if ((*it_).first == (*it).first) {
+        m_data[index].erase(it_);
         --m_size;
         return;
       }
@@ -155,19 +169,52 @@ class HashMap {
   size_type getSize() const { return m_size; }
 
   bool operator==(const HashMap& other) const {
-    (void)other;
-    throw std::runtime_error("TODO");
+    if (this->getSize() != other.getSize())
+      return false;
+
+    const_iterator org = this->cbegin();
+    const_iterator oth = other.cbegin();
+
+    for (size_type i = 0; i < getSize(); i++) {
+      if (org->first != oth->first || org->second != oth->second)
+        return false;
+
+      ++org;
+      ++oth;
+    }
+
+    return true;
   }
 
   bool operator!=(const HashMap& other) const { return !(*this == other); }
 
-  iterator begin() { throw std::runtime_error("TODO"); }
+  iterator begin() {
+    if (!isEmpty())
+      for (auto i = 0; i < HASHMAP_SIZE; ++i)
+        if (!m_data[i].empty())
+          return iterator(*this, i, m_data[i].begin());
 
-  iterator end() { throw std::runtime_error("TODO"); }
+    return iterator(*this, 0, m_data[0].begin(), true);
+  }
 
-  const_iterator cbegin() const { throw std::runtime_error("TODO"); }
+  iterator end() {
+    return iterator(*this, HASHMAP_SIZE - 1, m_data[HASHMAP_SIZE - 1].end(),
+                    true);
+  }
 
-  const_iterator cend() const { throw std::runtime_error("TODO"); }
+  const_iterator cbegin() const {
+    if (!isEmpty())
+      for (auto i = 0; i < HASHMAP_SIZE; ++i)
+        if (!m_data[i].empty())
+          return const_iterator(*this, i, m_data[i].begin());
+
+    return const_iterator(*this, 0, m_data[0].begin(), true);
+  }
+
+  const_iterator cend() const {
+    return const_iterator(*this, HASHMAP_SIZE - 1,
+                          m_data[HASHMAP_SIZE - 1].end(), true);
+  }
 
   const_iterator begin() const { return cbegin(); }
 
@@ -182,32 +229,104 @@ class HashMap<KeyType, ValueType>::ConstIterator {
   using value_type = typename HashMap::value_type;
   using pointer = const typename HashMap::value_type*;
   using size_type = typename HashMap::size_type;
- private:
-  size_type index;
-  size_type offset;
- public:
-  explicit ConstIterator() {}
+  using list_iterator =
+      typename std::list<std::pair<const KeyType, ValueType>>::const_iterator;
 
-  ConstIterator(const ConstIterator& other) {
-    (void)other;
-    throw std::runtime_error("TODO");
+ protected:
+  const HashMap& m_source;
+  size_type m_index;
+  list_iterator m_element;
+  bool m_isSentinel;
+
+ public:
+  explicit ConstIterator(const HashMap& source,
+                         size_type index,
+                         list_iterator element,
+                         bool isSentinel = false)
+      : m_source(source),
+        m_index(index),
+        m_element(element),
+        m_isSentinel(isSentinel) {}
+
+  ConstIterator(const ConstIterator& other)
+      : m_source(other.m_source),
+        m_index(other.m_index),
+        m_element(other.m_element),
+        m_isSentinel(other.m_isSentinel) {}
+
+  ConstIterator& operator++() {
+    if (m_isSentinel)
+      throw std::out_of_range("Next iterator does not exist");
+
+    list_iterator tmp = ++m_element;
+    if (tmp != m_source.m_data[m_index].end()) {
+      ++m_element;
+      return *this;
+    }
+
+    for (size_type i = m_index + 1; i < HASHMAP_SIZE; ++i) {
+      if (!m_source.m_data[i].empty()) {
+        m_element = m_source.m_data[i].begin();
+        m_index = i;
+        return *this;
+      }
+    }
+
+    m_index = HASHMAP_SIZE - 1;
+    m_element = m_source.m_data[HASHMAP_SIZE - 1].end();
+    m_isSentinel = true;
+    return *this;
   }
 
-  ConstIterator& operator++() { throw std::runtime_error("TODO"); }
+  ConstIterator operator++(int) {
+    ConstIterator tmp(*this);
+    ++(*this);
+    return tmp;
+  }
 
-  ConstIterator operator++(int) { throw std::runtime_error("TODO"); }
+  ConstIterator& operator--() {
+    if (m_element != m_source.m_data[m_index].begin()) {
+      --m_element;
+      m_isSentinel = false;
+      return *this;
+    }
 
-  ConstIterator& operator--() { throw std::runtime_error("TODO"); }
+    if (m_index == 0)
+      throw std::out_of_range("Previous iterator does not exist");
 
-  ConstIterator operator--(int) { throw std::runtime_error("TODO"); }
+    for (size_type i = m_index - 1; i >= 0; --i) {
+      if (!m_source.m_data[i].empty()) {
+        m_element = --(m_source.m_data[i].end());
+        m_index = i;
+        m_isSentinel = false;
+        return *this;
+      }
+    }
 
-  reference operator*() const { throw std::runtime_error("TODO"); }
+    throw std::out_of_range("Previous iterator does not exist");
+  }
+
+  ConstIterator operator--(int) {
+    ConstIterator tmp(*this);
+    --(*this);
+    return tmp;
+  }
+
+  reference operator*() const {
+    if (m_isSentinel)
+      throw std::out_of_range("Iterator does not have a value");
+    return *(m_element);
+  }
 
   pointer operator->() const { return &this->operator*(); }
 
   bool operator==(const ConstIterator& other) const {
-    (void)other;
-    throw std::runtime_error("TODO");
+    if (&m_source == &(other.m_source)) {
+      if (m_isSentinel == other.m_isSentinel)
+        return true;
+      return m_index == other.m_index && m_element == other.m_element;
+    }
+    return false;
   }
 
   bool operator!=(const ConstIterator& other) const {
@@ -221,8 +340,13 @@ class HashMap<KeyType, ValueType>::Iterator
  public:
   using reference = typename HashMap::reference;
   using pointer = typename HashMap::value_type*;
-
-  explicit Iterator() {}
+  using list_iterator =
+      typename std::list<std::pair<const KeyType, ValueType>>::iterator;
+  explicit Iterator(const HashMap& source,
+                    size_type index,
+                    list_iterator element,
+                    bool isSentinel = false)
+      : ConstIterator(source, index, element, isSentinel) {}
 
   Iterator(const ConstIterator& other) : ConstIterator(other) {}
 
