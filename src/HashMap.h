@@ -11,7 +11,7 @@
 #include <string>
 #include <utility>
 
-#define HASHMAP_SIZE 2048
+#define HASHMAP_SIZE 8192
 
 namespace aisdi {
 
