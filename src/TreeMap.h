@@ -382,11 +382,7 @@ class TreeMap {
   }
 
   mapped_type& valueOf(const key_type& key) {
-    Node* x = search(key);
-    if (x == m_nil)
-      throw std::out_of_range("Node with given key does not exist.");
-
-    return static_cast<ValueNode*>(x)->m_value.second;
+    return const_cast<mapped_type &>(const_cast<const TreeMap<KeyType, ValueType> *>(this)->valueOf(key));
   }
 
   const_iterator find(const key_type& key) const {
@@ -395,8 +391,7 @@ class TreeMap {
   }
 
   iterator find(const key_type& key) {
-    Node* x = search(key);
-    return iterator(*this, x);
+    return const_cast<const HashMap<KeyType, ValueType> *>(this)->valueOf(key);
   }
 
   void remove(const key_type& key) {

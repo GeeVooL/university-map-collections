@@ -106,15 +106,7 @@ class HashMap {
   }
 
   mapped_type& valueOf(const key_type& key) {
-    // return const_cast<HashMap&>(*this).valueOf(key);
-    const size_type index = hash_fn(key) % HASHMAP_SIZE;
-
-    for (auto it = m_data[index].begin(); it != m_data[index].end(); it++) {
-      if ((*it).first == key)
-        return (*it).second;
-    }
-
-    throw std::out_of_range("Element with given key does not exist");
+    return const_cast<mapped_type&>(const_cast<const HashMap<KeyType, ValueType>*>(this)->valueOf(key));
   }
 
   const_iterator find(const key_type& key) const {
@@ -128,14 +120,7 @@ class HashMap {
   }
 
   iterator find(const key_type& key) {
-    const size_type index = hash_fn(key) % HASHMAP_SIZE;
-
-    for (auto it = m_data[index].begin(); it != m_data[index].end(); it++) {
-      if ((*it).first == key)
-        return iterator(*this, index, it);
-    }
-
-    return end();
+    return const_cast<const HashMap<KeyType, ValueType> *>(this)->find(key);
   }
 
   void remove(const key_type& key) {
