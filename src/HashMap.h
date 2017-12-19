@@ -294,10 +294,10 @@ class HashMap<KeyType, ValueType>::ConstIterator {
     if (m_index == 0)
       throw std::out_of_range("Previous iterator does not exist");
 
-    for (size_type i = m_index - 1; i >= 0; --i) {
-      if (!m_source.m_data[i].empty()) {
-        m_element = --(m_source.m_data[i].end());
-        m_index = i;
+    for (size_type i = m_index; i; --i) {
+      if (!m_source.m_data[i - 1].empty()) {
+        m_element = --(m_source.m_data[i - 1].end());
+        m_index = i - 1;
         m_isSentinel = false;
         return *this;
       }
