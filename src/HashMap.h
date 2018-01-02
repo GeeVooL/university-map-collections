@@ -172,15 +172,14 @@ class HashMap {
     if (this->getSize() != other.getSize())
       return false;
 
-    const_iterator org = this->cbegin();
-    const_iterator oth = other.cbegin();
+    const_iterator it = this->cbegin();
 
     for (size_type i = 0; i < getSize(); i++) {
-      if (org->first != oth->first || org->second != oth->second)
+      size_type index = hash_fn(it->first) % HASHMAP_SIZE;
+      if (std::find(other.m_data[index].begin(), other.m_data[index].end(),
+                    *it) == other.m_data[index].end())
         return false;
-
-      ++org;
-      ++oth;
+      ++it;
     }
 
     return true;
